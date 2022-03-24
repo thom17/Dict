@@ -12,6 +12,7 @@ class DB:
 
 class WordBook(DB):
     #굳이 필요하지 않을 수도 ?
+
     def makeWordBook(self):
         sql = "Select * From WordBook"
         c = self.cursor
@@ -82,6 +83,7 @@ class Problem(DB):
     def __init__(self, path):
         DB.__init__(self, path)
         self.wordList = []
+
     def getTodayWordList(self):
         time = str(datetime.datetime.now().date())
         sql = f'SELECT eng FROM "Problem" where date = "{time}";'
@@ -90,12 +92,34 @@ class Problem(DB):
             wordList.append(c[0])
         return wordList
 
-    def makeQuiz(self, eng : str):
+    def setWordList(self, eng : str):
         sql = f'SELECT * from WordBook where eng = "{eng}";'
         for c in self.cursor.execute(sql).fetchall():
             word = Word(c[0], c[1], c[2])
             self.wordList.append(word)
-        print(self.wordList)
+
+    #DB에서 ansList 정보 가져오기 (self.wordList 기준 )
+    def getAnsList(self):
+        for word in self.wordList:
+            sql = f'SELECT  kor, count, correct from AnsList where eng = {word.eng};'
+            for result in self.cursor.execute(sql).fetchall():
+                print(result)
+
+    def setAns(self, word : Word):
+        
+
+
+    def makeProblem(self):
+        for eng in self.getTodayWordList():
+            self.setWordList(eng)
+
+        for eng in self.wordList:
+
+
+
+
+
+
 
 def wordbookTest():
     db = WordBook("test.db")

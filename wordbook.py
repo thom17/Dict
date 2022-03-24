@@ -11,7 +11,6 @@ class Wordbook:
 
     def addWord(self, word):
         self.wordList.append(word)
-
     def makeProblem(self):
         random.shuffle( self.wordList )
         return Problem(self.wordList)
@@ -35,7 +34,7 @@ class Word:
         self.eng = eng
         self.ansList = []
         self.addAns(kor)
-        self.ansRecord = {}
+        self.ansRecord = {} # { [ kor ] = [ count : int  , isRight : boolean] }
         self.state = state
     def addAns(self, kor : str):
         spList = kor.split(',')
@@ -66,7 +65,7 @@ class DayState: #요놈을 폴더에서 읽을때 초기화 하여 경로 지정
     def getDay(self):
         return DayState.list[self.index]
 
-
+"""
 class Problem: #DayState를 활용하기 위해 csv 읽어서 wordList에 더할까?
     def __init__(self, wordbook : Wordbook):
         self.time = str(datetime.datetime.now().date())
@@ -89,7 +88,7 @@ class Problem: #DayState를 활용하기 위해 csv 읽어서 wordList에 더할
         for i in range(len(csv)):
             df = csv.iloc[i]
             self.wordbook.add(df[0], df[1])
-
+"""
 if __name__ == "__main__":
     pb = Problem(Wordbook([]))
     #pb.readFile()
