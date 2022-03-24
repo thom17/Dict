@@ -1,7 +1,7 @@
 import os
 import sqlite3
+import re
 from wordbook import *
-
 class DB:
     def __init__(self, path):
         self.path = path
@@ -10,6 +10,7 @@ class DB:
     def close(self):
         self.conn.close()
 
+class WordBook(DB):
     #굳이 필요하지 않을 수도 ?
     def makeWordBook(self):
         sql = "Select * From WordBook"
@@ -23,7 +24,6 @@ class DB:
         sql = 'SELECT * FROM "WordBook" where eng = "' + word.eng + '";'
         result = self.cursor.execute(sql).fetchone()
         if result: #kr 뜻 추가 state는 0으로 리셋
-
             originWord = Word(eng = result[0], kor = result[1])
             word.addAns(originWord.kor) #최신 갱신된 의미가 앞으로
             sql = f'UPDATE "WordBook" SET kor = "{originWord.kor}" , state = 0 where eng is "{originWord.eng}";'
@@ -45,12 +45,6 @@ class DB:
             sql = f'INSERT INTO "Problem" (eng, date) VALUES ("{word.eng}", "{time}");'
             self.cursor.execute(sql)
             self.conn.commit()
-
-    def makeProblem(self):
-        time = str(datetime.datetime.now().date())
-        sql = f"select * from problem where date is {time};"
-        for p in self.cursor.execute(sql).fetchall():
-            print(p)
 
     def print(self, target):
         sql = f'SELECT * FROM "{target}";'
@@ -84,11 +78,40 @@ def addWord(db : DB):
         db.addWord(word)
         db.makeProblem()
 
-if __name__ == "__main__":
-    db = DB("test.db")
+class Problem(DB):
+    def __init__(self, path):
+        DB.__init__(self, path)
+        self.wordList = []
+    def getTodayWordList(self):
+        time = str(datetime.datetime.now().date())
+        sql = f'SELECT eng FROM "Problem" where date = "{time}";'
+        wordList = []
+        for c in self.cursor.execute(sql).fetchall():
+            wordList.append(c[0])
+        return wordList
+
+    def makeQuiz(self, eng : str):
+        sql = f'SELECT * from WordBook where eng = "{eng}";'
+        for c in self.cursor.execute(sql).fetchall():
+            word = Word(c[0], c[1], c[2])
+            self.wordList.append(word)
+        print(self.wordList)
+
+def wordbookTest():
+    db = WordBook("test.db")
     db.readFile()
-    #db.makeWordBook()
-    #addWord(db)
-    #db.addWord(Word("lid", "병 측정하다222"))
+    # db.makeWordBook()
+    # addWord(db)
+    # db.addWord(Word("lid", "병 측정하다222"))
     db.print("WordBook")
     db.close()
+
+def probTest():
+    db = Problem("test.db")
+    for eng in db.getTodayWordList():
+        db.makeQuiz(eng)
+
+if __name__ == "__main__":
+    wordbookTest()
+    probTest()
+
