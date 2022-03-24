@@ -65,10 +65,13 @@ class DayState: #요놈을 폴더에서 읽을때 초기화 하여 경로 지정
     def getDay(self):
         return DayState.list[self.index]
 
-"""
-class Problem: #DayState를 활용하기 위해 csv 읽어서 wordList에 더할까?
-    def __init__(self, wordbook : Wordbook):
-        self.time = str(datetime.datetime.now().date())
+
+class Problem:
+    '''
+    시험 단어, 주관식 보기, 음성 출력기능 등 문제 관련 데이터 클래스
+    '''
+    def __init__(self, wordList : [] , time ):
+        self.time = time
         #self.file
         self.path = "prob/"+self.time
         self.wordList = []
@@ -88,7 +91,7 @@ class Problem: #DayState를 활용하기 위해 csv 읽어서 wordList에 더할
         for i in range(len(csv)):
             df = csv.iloc[i]
             self.wordbook.add(df[0], df[1])
-"""
+
 if __name__ == "__main__":
     pb = Problem(Wordbook([]))
     #pb.readFile()
