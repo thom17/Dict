@@ -1,13 +1,16 @@
-music_Attribute = ("아티스트", "곡이름", "앨범이름")
-music = {"아티스트" : "Lucia", "곡이름" : "오필리아", "Lucia : 꿈결 속의 멜로디 ep.02"}
+import random
 
-musicList = []
+import wordbook
+#word = wordbook.Word()
 
-musicList.append(music)
+qz = {}
+eng =['a', 'b', 'c']
+kor = [ ['x', 'ans', 'ans'], ['test', 'ans', 'sd'] , ['ans', 's', 's3', 's2']]
+ans = [[1, 2], [1], [0] ]
+li = range(5)
+print((random.choices(li, k = 4)))
 
-music = {"아티스트" : "Lucia", "곡이름" : "아라리", "Lucia : 환상소곡집"}
-
-musicList.append(music)
-
-print(musicList);
+for i in range(3):
+    qz[eng[i]] = (kor[i], ans[i])
+    #print(qz)
 

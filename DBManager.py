@@ -14,7 +14,7 @@ class DBManager:
         self.cursor = self.conn.cursor()
         self.wordBook = WordBookDB(self.conn, self.cursor)
         self.problem = ProblemDB(self.conn, self.cursor)
-        self.ansList = AnsListDB(self.conn, self.cursor)
+        self.ansRecord = AnsRecordDB(self.conn, self.cursor)
 
     def close(self):
         self.conn.close()
@@ -31,29 +31,32 @@ class DBManager:
         for word in wordList:
             self.problem.addWord(word.eng)
 
+    def loadAbsentExam(self):
+        result = self.problem.getAbsentExam()
+        for r in result:
+            self.problem.addWord(r[0])
+
+        self.problem.delAbsentExam()
+        self.conn.commit()
+
 
     def exam(self):
         time = str(datetime.datetime.now().date())
+        self.loadAbsentExam()
         englist = self.problem.getEngList(time)
         random.shuffle(englist)
         wordlist = []
         for eng in englist:
             word = self.wordBook.getWord(eng)
-            word.ansRecord = self.ansList.getAnsList(eng)
-            wordlist.append( word )
+            record = self.ansRecord.getAnsRecord(eng)
+            if record:
+                word.ansRecord = record
+            wordlist.append(word)
 
         #앞으로 구현 할 것
         problem = Problem(wordlist, time, self.wordBook.makeWordBook())
         problem.exam()
-        self.finish()
-
-
-
-
-
-
-
-
+        #self.finish()
 
 
     def readFile(self): #csv 읽기
@@ -87,12 +90,12 @@ class WordBookDB:
 
     def makeWordBook(self):
         '''
-        모든 단어를 담은 단어 리스트 출력 (문제를 출제시 유용하게 사용)
+        모든 단어를 담은 단어 리스트 출력 (문제를 출제시 , 학습 현황등에 사용)
         :return wordlist : Word(eng, kor, state)[]
         '''
-        sql = "Select * From WordBook"
+        sql = "Select * From WordBook;"
         wordlist = []
-        for row in self.cursor.execute(sql).fetchone():
+        for row in self.cursor.execute(sql).fetchall():
             eng = row[0]
             kor = row[1]
             state = row[2]
@@ -134,19 +137,21 @@ class WordBookDB:
             return False
         #self.addProblem(word) #아무튼 문제에 추가
 
-def addWord(db):
-    while True:
-        eng = input("eng:")
-        kor = input("kor:")
-        word = Word(eng, kor)
-        db.addWord(word)
-        db.makeProblem()
-
 class ProblemDB:
     def __init__(self, conn, cursor):
         self.conn = conn
         self.cursor = cursor
 
+    def getAbsentExam(self):
+        time = str(datetime.datetime.now().date())
+        sql = f'SELECT * FROM "Problem" where DATE(date) < DATE("{time}");'
+        print(sql)
+        return self.cursor.execute(sql).fetchall()
+
+    def delAbsentExam(self):
+        time = str(datetime.datetime.now().date())
+        sql = f'DELETE FROM "Problem" where DATE(date) < DATE("{time}");'
+        self.cursor.execute(sql)
 
     def addWord(self, eng:str):
         '''
@@ -179,23 +184,23 @@ class ProblemDB:
             engList.append(c[0])
         return engList
 ###
-class AnsListDB:
+class AnsRecordDB:
     def __init__(self, conn, cursor):
         self.conn = conn
         self.cursor = cursor
 
-    #DB에서 ansList 정보 가져오기 (self.wordList 기준 )
-    def getAnsList(self, eng : str):
+    #DB에서 ansRecord 정보 가져오기 (self.wordList 기준 )
+    def getAnsRecord(self, eng : str):
         '''
-        eng를 입력하여 해당하는 ansList 반환
+        eng를 입력하여 해당하는 ansRecord 반환
         :param word:
         :return:
         '''
-        ansList = {}
-        sql = f'SELECT  kor, count, correct from AnsList where eng = {eng};'
+        ansRecord = {}
+        sql = f'SELECT  kor, count, correct from AnsRecord where eng = "{eng}";'
         for result in self.cursor.execute(sql).fetchall():
-            ansList[result[0]] = [result[1], result[2]] #kor, count, correct
-        return ansList
+            ansRecord[result[0]] = [result[1], result[2]] #kor, count, correct
+        return ansRecord
     """
     def setAns(self, word : Word):
 
@@ -220,15 +225,19 @@ def wordbookTest():
     # addWord(db)
     # db.addWord(Word("lid", "병 측정하다222"))
     db.print("WordBook")
+    db.loadAbsentExam()
+    db.exam()
     db.close()
+
+
 
 def probTest():
     db = DBManager("test.db")
     time = str(datetime.datetime.now().date())
     for eng in db.problem.getWordList(time):
-        #db.makeQuiz(eng)
+        db.makeQuiz(eng)
 
 if __name__ == "__main__":
     wordbookTest()
-    probTest()
+    #probTest()
 

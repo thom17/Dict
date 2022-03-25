@@ -34,9 +34,9 @@ class Word:
     def __init__(self, eng, kor, state = 0):
         self.eng = eng
         self.ansList = []
-        self.addAns(kor)
-        self.ansRecord = {} # { [ kor ] = [ count : int  , isRight : boolean] }
+        self.ansRecord = {}  # { [ kor ] = [ count : int  , isRight : boolean] }
         self.state = state
+        self.addAns(kor)
     def addAns(self, kor : str):
         spList = kor.split(',')
         for i in range(len(spList)):
@@ -45,6 +45,7 @@ class Word:
                 continue
             else:
                 self.ansList.append(newAns)
+                self.ansRecord[newAns] = [0, True]
 
         self.kor = ', '.join(self.ansList)
 
@@ -55,6 +56,35 @@ class Word:
         else:
             self.ansRecord[str] += 1
         print("%s : %d" %(str, self.ansRecord[str]))
+
+    def makeQuiz(self, wordbook : [], radiosize = 10):
+        checklist = []
+
+        while checklist.__len__() < radiosize:
+            word = random.choice(wordbook)
+            kor = random.choice(word.ansList)
+            if self.ansList.__contains__(kor) or checklist.__contains__(kor):
+                continue
+            else:
+                checklist.append(kor)
+
+        anslist = []
+        while anslist.__len__() < self.ansList.__len__():
+            ans = random.randrange(0, self.ansList.__len__())
+            if anslist.__contains__(ans):
+                continue
+            else:
+                anslist.append(ans)
+
+        index = 0
+        for ans in anslist:
+            checklist[ans] = self.ansList[index]
+            index += 1
+
+        tp = (anslist, checklist)
+
+        return tp
+
 
 class DayState: #요놈을 폴더에서 읽을때 초기화 하여 경로 지정하자/
     list = (1, 3, 7, 30)
@@ -77,28 +107,20 @@ class Problem:
         #self.path = "prob/"+self.time
         self.wordList = wordList
         self.wordBook = wordBook
-        self.makeAnsList(wordList)
+        self.quizBook = self.makeQuizBook()
 
-    def makeMap(self, wordList : []):
-        self.map = {}
-        for word in wordList:
-            self.makeQ
-            self.map[word.eng]
+    def makeQuizBook(self):
+        quizBook = {}
+        for word in self.wordList:
+           quizBook[word.eng] = word.makeQuiz(self.wordBook)
+        return quizBook
 
-    #각각의 폴더의 해당 일을 읽어 단어 추가.
-    def readFile(self):
-        for day in DayState.listName:
-            if os.path.isfile(day+self.time+".csv"): #오늘날 볼 문제지가 있다면
-                file = open(day+"/"+self.time+".csv") #읽기
-                self.addWord(file, day) #단어 추가
+    def exam(self):
+        self.printQuizBook()
 
-    #해당 파일을 읽어 단어에 추가
-    def addWord(self, file , day):
-        csv = pandas.read_csv(file, names=["eng", "kor"])
-
-        for i in range(len(csv)):
-            df = csv.iloc[i]
-            self.wordbook.add(df[0], df[1])
+    def printQuizBook(self):
+        for quiz in self.quizBook:
+            print(quiz)
 
 if __name__ == "__main__":
     pb = Problem(Wordbook([]))
