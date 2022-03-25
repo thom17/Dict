@@ -31,6 +31,7 @@ class DBManager:
         for word in wordList:
             self.problem.addWord(word.eng)
 
+
     def exam(self):
         time = str(datetime.datetime.now().date())
         englist = self.problem.getEngList(time)
@@ -42,7 +43,7 @@ class DBManager:
             wordlist.append( word )
 
         #앞으로 구현 할 것
-        problem = Problem(wordlist, time)
+        problem = Problem(wordlist, time, self.wordBook.makeWordBook())
         problem.exam()
         self.finish()
 
@@ -84,14 +85,19 @@ class WordBookDB:
         self.conn = conn
         self.cursor = cursor
 
-    #굳이 필요하지 않을 수도 ?
     def makeWordBook(self):
+        '''
+        모든 단어를 담은 단어 리스트 출력 (문제를 출제시 유용하게 사용)
+        :return wordlist : Word(eng, kor, state)[]
+        '''
         sql = "Select * From WordBook"
-        c = self.cursor
-        for row in self.cursor.execute(sql):
+        wordlist = []
+        for row in self.cursor.execute(sql).fetchone():
             eng = row[0]
             kor = row[1]
             state = row[2]
+            wordlist.append(Word(eng, kor, state))
+        return wordlist
 
     def getWord(self, eng: str):
         '''

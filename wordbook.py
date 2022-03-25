@@ -6,8 +6,9 @@ import pandas
 class Wordbook:
     num = 0
     ok = 0
-    def __init__(self, wordList : []):
+    def __init__(self, wordList : [], wordBook : []):
         self.wordList = wordList
+        self.wordBook = wordBook
 
     def addWord(self, word):
         self.wordList.append(word)
@@ -70,12 +71,19 @@ class Problem:
     '''
     시험 단어, 주관식 보기, 음성 출력기능 등 문제 관련 데이터 클래스
     '''
-    def __init__(self, wordList : [] , time ):
+    def __init__(self, wordList : [] , time , wordBook : [] ):
         self.time = time
         #self.file
-        self.path = "prob/"+self.time
-        self.wordList = []
-        self.wordbook = wordbook
+        #self.path = "prob/"+self.time
+        self.wordList = wordList
+        self.wordBook = wordBook
+        self.makeAnsList(wordList)
+
+    def makeMap(self, wordList : []):
+        self.map = {}
+        for word in wordList:
+            self.makeQ
+            self.map[word.eng]
 
     #각각의 폴더의 해당 일을 읽어 단어 추가.
     def readFile(self):
