@@ -12,6 +12,7 @@ class Wordbook:
 
     def addWord(self, word):
         self.wordList.append(word)
+
     def makeProblem(self):
         random.shuffle( self.wordList )
         return Problem(self.wordList)
@@ -49,15 +50,16 @@ class Word:
 
         self.kor = ', '.join(self.ansList)
 
-    def addRecord(self, str):
-        value = self.ansRecord.get(str)
-        if value == None:
-            self.ansRecord[str] = 1
+    def addRecord(self, key):
+        value = self.ansRecord.get(key)
+        if value:
+            self.ansRecord[key][0] += 1
         else:
-            self.ansRecord[str] += 1
-        print("%s : %d" %(str, self.ansRecord[str]))
+            self.ansRecord[key] = [1, False]
+        print("%s : %s" %(key, str(self.ansRecord[key])))
+        return self.ansRecord[key]
 
-    def makeQuiz(self, wordbook : [], radiosize = 10):
+    def makeQuiz(self, wordbook : [], radiosize = 9):
         checklist = []
 
         while checklist.__len__() < radiosize:
@@ -70,7 +72,7 @@ class Word:
 
         anslist = []
         while anslist.__len__() < self.ansList.__len__():
-            ans = random.randrange(0, self.ansList.__len__())
+            ans = random.randrange(0, radiosize)
             if anslist.__contains__(ans):
                 continue
             else:
@@ -81,7 +83,7 @@ class Word:
             checklist[ans] = self.ansList[index]
             index += 1
 
-        tp = (anslist, checklist)
+        tp = (anslist, checklist, self)
 
         return tp
 
@@ -116,16 +118,65 @@ class Problem:
         return quizBook
 
     def exam(self):
-        self.printQuizBook()
+        results = []
+        for key in self.quizBook.keys():
+            print(key+":")
+            self.printQuiz(key)
+            ans = self.inputLine(input("ans List : "))
+            results.append(self.makeResult(key, ans))
 
-    def printQuizBook(self):
-        for quiz in self.quizBook:
-            print(quiz)
+        return results
+
+    def printQuiz(self, key):
+        index = 1
+        for radio in self.quizBook.get(key)[1]:
+            print("%d. %s " %(index, radio), end="")
+            index += 1
+        print()
+
+    def inputLine(self, ip : str):
+        ansList = []
+        for c in ip:
+            if c.isdigit() and not ansList.__contains__(int(c)-1):
+                ansList.append(int(c)-1)
+            else:
+                continue
+        print(ansList)
+
+        return ansList
+
+    def makeResult(self, key, inputs: list):
+        '''
+        :param key:
+        :param inputs:
+        :return result : dict{ "eng", "inputs", "ans", "kor", "nextState" }
+        '''
+        result = {"eng" : key , "inputs" : inputs, "nextState" : 0}
+        right = True
+        quiz = self.quizBook.get(key)
+        result["ans"] = quiz[0]
+        korlist = result["kor"] = quiz[1]
+        word = quiz[2]
+        for i in inputs:
+            record = word.addRecord(korlist[i])
+            if not record[1]:  #if != ans
+                right = False
+        if right:
+            result["nextState"] = word.state + 1
+        elif word.state:
+            result["nextState"] = word.state - 1
+
+        return result
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
-    pb = Problem(Wordbook([]))
-    #pb.readFile()
+    print()
 
-    word = Word("4", "원의미")
-    word.addAns("이런 의미, 저런 의미,새로운 의미,의미")
-    print(word.kor)

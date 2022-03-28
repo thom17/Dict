@@ -16,6 +16,7 @@ class DBManager:
         self.problem = ProblemDB(self.conn, self.cursor)
         self.ansRecord = AnsRecordDB(self.conn, self.cursor)
 
+
     def close(self):
         self.conn.close()
 
@@ -53,11 +54,42 @@ class DBManager:
                 word.ansRecord = record
             wordlist.append(word)
 
-        #앞으로 구현 할 것
-        problem = Problem(wordlist, time, self.wordBook.makeWordBook())
-        problem.exam()
+        wordbook = self.wordBook.makeWordBook()
+        problem = Problem(wordlist, time, wordbook)
+        results = problem.exam()
+        self.updateResult(results)
+        self.printResults(results)
+
+    def printResults(self, results):
+        for r in results:
+            print(r["eng"]+":")
+            print("ans : ", end="")
+            for ans in r["ans"]:
+                print(r["kor"][ans]+"\t" , end="")
+            print()
+            print("You : ", end="")
+            for i in r["inputs"]:
+                print(r["kor"][i]+"\t")
+            print()
+
         #self.finish()
 
+    def updateResult(self, results : list):
+        for r in results:
+            state = r.get("nextState")
+            if state:
+                self.wordBook.updateState(r["eng"], r["nextState"])
+            else:
+                continue
+
+            self.ansRecord.update(r)
+            self.problem.updateExam(r)
+            print(r)
+
+    def addWord(self, word):
+        self.wordBook.addWord(word)
+        for kor in word.ansList:
+            self.ansRecord.addRecord(word.eng, kor)
 
     def readFile(self): #csv 읽기
         time = str(datetime.datetime.now().date())
@@ -66,7 +98,8 @@ class DBManager:
                 file = open(day+"/"+time+".csv") #읽기
                 wordlist = self.csv2wordList(file, day) #단어 리스트 생성
                 for word in wordlist:
-                    self.wordBook.addWord(word)
+                    self.addWord(word)
+
 
     #readFile로 호출됨
     def csv2wordList(self, file, day):
@@ -113,6 +146,11 @@ class WordBookDB:
             word = Word(c[0], c[1], c[2])
         return word
 
+    def updateState(self, eng, state):
+        sql = f'UPDATE "WordBook" SET state = {state} where eng is "{eng}";'
+        self.cursor.execute(sql)
+        self.conn.commit()
+
     #모르는 단어 추가 혹은 의미 추가
     def addWord(self, word : Word):
         '''
@@ -153,6 +191,17 @@ class ProblemDB:
         sql = f'DELETE FROM "Problem" where DATE(date) < DATE("{time}");'
         self.cursor.execute(sql)
 
+    def updateExam(self, result : dict):
+        today = datetime.datetime.now().date()
+        stateDay = (1, 3, 7, 15, 30)
+        if  stateDay.__len__() < result["nextState"]: #졸업
+            sql = f'DELETE FROM "Problem" where date = {today} and eng = {result["eng"]};'
+        else:
+            nextTime = datetime.datetime.now() + datetime.timedelta(days=stateDay[result["nextState"]])
+            sql = f'UPDATE "Problem" SET  date = "{nextTime.date()}" where eng is "{result["eng"]}";'
+        self.cursor.execute(sql)
+        self.conn.commit()
+
     def addWord(self, eng:str):
         '''
         단어 문제 테이블에 추가 (중복 방지) (eng, data)
@@ -189,6 +238,10 @@ class AnsRecordDB:
         self.conn = conn
         self.cursor = cursor
 
+    def addRecord(self, eng, kor ,count = 0, correct = "True"):
+        sql = f'INSERT INTO "AnsRecord" (eng, kor, count ,correct) VALUES ("{eng}", "{kor}", {count}, {correct});'
+        self.cursor.execute(sql)
+        self.conn.commit()
     #DB에서 ansRecord 정보 가져오기 (self.wordList 기준 )
     def getAnsRecord(self, eng : str):
         '''
@@ -201,6 +254,20 @@ class AnsRecordDB:
         for result in self.cursor.execute(sql).fetchall():
             ansRecord[result[0]] = [result[1], result[2]] #kor, count, correct
         return ansRecord
+
+    def update(self, result : dict):
+        eng = result["eng"]
+        korlist = result["kor"]
+        for i in result["inputs"]:
+            sql = f'SELECT * FROM "AnsRecord" where eng = "{eng}" and kor = "{korlist[i]}";'
+            if self.cursor.execute(sql).fetchall().__len__():
+                sql = f'UPDATE "AnsRecord" SET  count = count + 1 where eng is "{result["eng"]} and kor is {korlist[i]}";'
+                self.conn.commit()
+            else:
+                self.addRecord(eng, korlist[i] )
+
+
+
     """
     def setAns(self, word : Word):
 
@@ -228,7 +295,6 @@ def wordbookTest():
     db.loadAbsentExam()
     db.exam()
     db.close()
-
 
 
 def probTest():
