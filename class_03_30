@@ -1,0 +1,31 @@
+def left(size = 4):
+    printResult = """
+*
+**
+***
+****"""
+    return printResult
+
+def right(size = 4):
+    printResult ="""
+   *
+  **
+ ***
+****"""
+    return printResult
+def center(size = 4):
+    printResult = """
+   *
+  * *
+ * * *
+* * * *
+"""
+    return printResult
+
+l = left()
+r = right()
+c = center()
+
+print("Left : "+l)
+print("Right : "+r)
+print("Center : "+c)

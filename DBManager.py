@@ -58,6 +58,10 @@ class DBManager:
         problem.exam()
         #self.finish()
 
+    def reset(self):
+        self.problem.reset()
+        self.ansRecord.reset()
+        self.wordBook.reset()
 
     def readFile(self): #csv 읽기
         time = str(datetime.datetime.now().date())
@@ -87,6 +91,17 @@ class WordBookDB:
     def __init__(self, conn, cursor):
         self.conn = conn
         self.cursor = cursor
+    def reset(self):
+        sql = "drop table WordBook"
+        self.cursor.execute(sql)
+        sql ='''CREATE TABLE "WordBook" (
+"eng"	varchar,
+"kor"	varchar,
+"state"	INTEGER DEFAULT 0,
+PRIMARY KEY("eng")
+);'''
+        self.cursor.execute(sql)
+        self.conn.commit()
 
     def makeWordBook(self):
         '''
@@ -142,6 +157,19 @@ class ProblemDB:
         self.conn = conn
         self.cursor = cursor
 
+    def reset(self):
+        sql = "drop table Problem;"
+        self.cursor.execute(sql)
+        sql ="""CREATE TABLE "Problem" (
+	"eng"	varchar not null,
+	"date"	time not null,
+	FOREIGN KEY("eng") REFERENCES "WordBook"("eng")
+);"""
+        self.cursor.execute(sql)
+        self.conn.commit()
+
+
+
     def getAbsentExam(self):
         time = str(datetime.datetime.now().date())
         sql = f'SELECT * FROM "Problem" where DATE(date) < DATE("{time}");'
@@ -189,6 +217,20 @@ class AnsRecordDB:
         self.conn = conn
         self.cursor = cursor
 
+    def reset(self):
+        sql = "drop table AnsRecord;"
+        self.cursor.execute(sql)
+        sql = """CREATE TABLE "AnsRecord" (
+	"eng"	varchar not null,
+	"kor"	varchar not null,
+	"count"	int, 
+	"correct" bool,
+	FOREIGN KEY("eng") REFERENCES "WordBook"("eng")
+	PRIMARY KEY("eng" , "kor")
+);"""
+        self.cursor.execute(sql)
+        self.conn.commit()
+
     #DB에서 ansRecord 정보 가져오기 (self.wordList 기준 )
     def getAnsRecord(self, eng : str):
         '''
@@ -213,11 +255,6 @@ class AnsRecordDB:
         for eng in self.wordList:
     """
 
-
-
-
-
-
 def wordbookTest():
     db = DBManager("test.db")
     db.readFile()
@@ -233,6 +270,8 @@ def wordbookTest():
 
 def probTest():
     db = DBManager("test.db")
+    #db.reset()
+    db.close()
     time = str(datetime.datetime.now().date())
     for eng in db.problem.getWordList(time):
         db.makeQuiz(eng)

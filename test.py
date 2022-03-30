@@ -1,16 +1,17 @@
-import random
+lv = int(input(":"))
 
-import wordbook
-#word = wordbook.Word()
 
-qz = {}
-eng =['a', 'b', 'c']
-kor = [ ['x', 'ans', 'ans'], ['test', 'ans', 'sd'] , ['ans', 's', 's3', 's2']]
-ans = [[1, 2], [1], [0] ]
-li = range(5)
-print((random.choices(li, k = 4)))
+for l in range(lv):
+    for s in range(lv - l):
+        print("",end=" ")
+    for star in range(l+1):
+        print("* ", end="")
+    print()
 
-for i in range(3):
-    qz[eng[i]] = (kor[i], ans[i])
-    #print(qz)
 
+"""
+   *
+  * *
+ * * *
+* * * *
+"""
