@@ -1,8 +1,13 @@
 import datetime
 import os
 import sqlite3
-import re
+import time
+
+import pandas
+
 from wordbook import *
+
+
 class DBManager:
     '''
     단어 추가 하기 (csv 읽기) -> 문제 추가 하기
@@ -21,19 +26,13 @@ class DBManager:
         self.wordBook.reset()
 
     def close(self):
+        self.conn.commit()
         self.conn.close()
 
     def print(self, target):
         sql = f'SELECT * FROM "{target}";'
         for p in self.cursor.execute(sql).fetchall():
             print(p)
-
-    def addWord(self):
-        time = str(datetime.datetime.now().date())
-        wordList = self.csv2wordList(open('prob/'+time+'.csv'), None)
-
-        for word in wordList:
-            self.problem.addWord(word.eng)
 
     def loadAbsentExam(self):
         result = self.problem.getAbsentExam()
@@ -65,16 +64,22 @@ class DBManager:
 
     def printResults(self, results):
         for r in results:
+            playsound(f'mp3/{r["eng"]}.mp3')
+            time.sleep(1)
             print(r["eng"]+":")
+            time.sleep(1)
+            playsound(f'mp3/{r["eng"]}.mp3')
             print("ans : ", end="")
             for ans in r["ans"]:
-                print(r["kor"][ans]+"\t" , end="")
+                print(r["kor"][ans]+"\t" , end=",")
             print()
+            time.sleep(1)
+            playsound(f'mp3/{r["eng"]}.mp3')
             print("You : ", end="")
             for i in r["inputs"]:
-                print(r["kor"][i]+"\t")
+                print(r["kor"][i]+"\t", end=",")
             print()
-
+            time.sleep(1)
         #self.finish()
 
     def updateResult(self, results : list):
@@ -93,6 +98,7 @@ class DBManager:
         self.wordBook.addWord(word)
         for kor in word.ansList:
             self.ansRecord.addRecord(word.eng, kor)
+        self.problem.addWord(word.eng)
 
     def readFile(self): #csv 읽기
         time = str(datetime.datetime.now().date())
@@ -211,7 +217,7 @@ class ProblemDB:
     def getAbsentExam(self):
         time = str(datetime.datetime.now().date())
         sql = f'SELECT * FROM "Problem" where DATE(date) < DATE("{time}");'
-        print(sql)
+        print("지난 날짜 오늘로 설정함.")
         return self.cursor.execute(sql).fetchall()
 
     def delAbsentExam(self):
@@ -268,7 +274,11 @@ class AnsRecordDB:
 
     def reset(self):
         sql = "drop table AnsRecord;"
-        self.cursor.execute(sql)
+        try:
+            self.cursor.execute(sql)
+        except:
+            pass
+
         sql = """CREATE TABLE "AnsRecord" (
     	"eng"	varchar not null,
     	"kor"	varchar not null,

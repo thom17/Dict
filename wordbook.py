@@ -1,7 +1,8 @@
-import os.path
+from gtts import gTTS
+from playsound import playsound
+
 import random
-import datetime
-import pandas
+
 
 class Wordbook:
     num = 0
@@ -56,7 +57,7 @@ class Word:
             self.ansRecord[key][0] += 1
         else:
             self.ansRecord[key] = [1, False]
-        print("%s : %s" %(key, str(self.ansRecord[key])))
+        #print("%s : %s" %(key, str(self.ansRecord[key])))
         return self.ansRecord[key]
 
     def makeQuiz(self, wordbook : [], radiosize = 9):
@@ -129,6 +130,10 @@ class Problem:
 
     def printQuiz(self, key):
         index = 1
+        sound = gTTS(key)
+        sound.save(f'mp3/{key}.mp3')
+        playsound(f'mp3/{key}.mp3')
+        playsound(f'mp3/{key}.mp3')
         for radio in self.quizBook.get(key)[1]:
             print("%d. %s " %(index, radio), end="")
             index += 1
@@ -141,7 +146,7 @@ class Problem:
                 ansList.append(int(c)-1)
             else:
                 continue
-        print(ansList)
+        print()
 
         return ansList
 
@@ -167,6 +172,7 @@ class Problem:
             result["nextState"] = word.state - 1
 
         return result
+
 
 
 
